@@ -22,3 +22,26 @@ Run CRICK Script: results/scripts/files_2024_crick_script.sh
 Run NIID Script: results/scripts/files_2024_niid_script.sh
 Run VIDRL Script: results/scripts/files_2024_vidrl_script.sh
 ```
+
+From fauna directory
+
+```
+# Seems to work
+bash ~/github/j23414/validate_titer_parse/results/scripts/files_2024_vidrl_script.sh
+bash ~/github/j23414/validate_titer_parse/results/scripts/files_2024_niid_script.sh
+
+# Perhaps only run the non-FRA
+bash ~/github/j23414/validate_titer_parse/results/scripts/files_2024_crick_script.sh
+```
+
+Grep the final counts and compare with counts in Fauna
+
+```
+grep "measurements after filtering" my_log/*.txt
+```
+
+Pull counts from Fauna...
+
+```
+...
+```
