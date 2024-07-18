@@ -34,6 +34,28 @@ process GENERATE_VIDRL_COMMANDS {
   """
 }
 
+process GENERATE_NIID_COMMANDS {
+  publishDir 'results/scripts', mode: 'copy'
+  input: path(filelist)
+  output: path("${filelist.simpleName}_niid_script.sh")
+  script:
+  """
+  #! /usr/bin/env bash
+  gen_niid_cmd.sh ${filelist} > ${filelist.simpleName}_niid_script.sh
+  """
+}
+
+process GENERATE_CRICK_COMMANDS {
+  publishDir 'results/scripts', mode: 'copy'
+  input: path(filelist)
+  output: path("${filelist.simpleName}_crick_script.sh")
+  script:
+  """
+  #! /usr/bin/env bash
+  gen_crick_cmd.sh ${filelist} > ${filelist.simpleName}_crick_script.sh
+  """
+}
+
 workflow {
   LIST_FILES()
   | view {file -> "File: results/${file.name}, Lines: ${file.text.split('\n').size()}"}
@@ -41,4 +63,12 @@ workflow {
   | view {file -> "File: results/${file.name}, Lines: ${file.text.split('\n').size()}"}
   | GENERATE_VIDRL_COMMANDS
   | view {file -> "Run VIDRL Script: results/scripts/${file.name}"}
+
+  SELECT_2024.out
+  | GENERATE_NIID_COMMANDS
+  | view {file -> "Run NIID Script: results/scripts/${file.name}"}
+
+  SELECT_2024.out
+  | GENERATE_CRICK_COMMANDS
+  | view {file -> "Run CRICK Script: results/scripts/${file.name}"}
 }
