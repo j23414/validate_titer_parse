@@ -23,9 +23,22 @@ process SELECT_2024 {
   """
 }
 
+process GENERATE_VIDRL_COMMANDS {
+  publishDir 'results/scripts', mode: 'copy'
+  input: path(filelist)
+  output: path("${filelist.simpleName}_vidrl_script.sh")
+  script:
+  """
+  #! /usr/bin/env bash
+  gen_vidrl_cmd.sh ${filelist} > ${filelist.simpleName}_vidrl_script.sh
+  """
+}
+
 workflow {
   LIST_FILES()
-  | view {file -> "File: ${file.name}, Lines: ${file.text.split('\n').size()}"}
+  | view {file -> "File: results/${file.name}, Lines: ${file.text.split('\n').size()}"}
   | SELECT_2024
-  | view {file -> "File: ${file.name}, Lines: ${file.text.split('\n').size()}"}
+  | view {file -> "File: results/${file.name}, Lines: ${file.text.split('\n').size()}"}
+  | GENERATE_VIDRL_COMMANDS
+  | view {file -> "Run VIDRL Script: results/scripts/${file.name}"}
 }
