@@ -17,7 +17,7 @@ envdir ~/nextstrain/env.d/seasonal-flu/ \\
   --virus flu \\
   --subtype ${SUBTYPE} \\
   --assay_type ${ASSAY} \\
-  --path ../fludata/Crick-London-WHO-CC/raw-data/$FILEPATH/ \\
+  --path $FILEPATH/ \\
   --fstem $FILENAME \\
   --ftype tables \\
   --preview &>> $LOGFILE
