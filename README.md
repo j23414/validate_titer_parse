@@ -40,8 +40,33 @@ Grep the final counts and compare with counts in Fauna
 grep "measurements after filtering" my_log/*.txt
 ```
 
-Pull counts from Fauna...
+Pull counts per source file from Fauna
 
 ```
-...
+mkdir counts
+
+for subtype in h1n1pdm h3n2 vic; do
+    for source in vidrl crick niid; do
+        envdir ~/nextstrain/env.d/seasonal-flu \
+          python tdb/download.py \
+          -db ${source}_tdb \
+          --ftype tsv \
+          --subtype ${subtype} \
+          --fstem ${source}_${subtype}_2024 \
+          --interval inclusion_date:2024-01-01,2024-12-31
+
+        cat data/${source}_${subtype}_2024_titers.tsv \
+        | awk -F'\t' 'OFS="\t" {
+            for(i=1; i<=NF; i++) {
+                sub(/_[0-9]+$/, "", $i)
+            }
+            print $0
+        }' \
+        | awk -F'\t' '{print $4}' \
+        | sort \
+        | uniq -c \
+        > counts/${subtype}_${source}_counts.tsv
+        sleep 1
+    done
+done
 ```
