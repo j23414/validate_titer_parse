@@ -2,27 +2,30 @@
 Temporary repo to document validation
 
 ``` bash
-nextflow run main.nf
+nextflow run main.nf -resume
 ```
 
 Results
 
 ``` bash
 N E X T F L O W  ~  version 23.04.4
-Launching `main.nf` [insane_curran] DSL2 - revision: 3c2ea6628a
-executor >  local (5)
-[68/dd4360] process > LIST_FILES              [100%] 1 of 1 ✔
-[9e/4dbe7e] process > SELECT_2024             [100%] 1 of 1 ✔
-[25/06f4cb] process > GENERATE_VIDRL_COMMANDS [100%] 1 of 1 ✔
-[0b/a70e04] process > GENERATE_NIID_COMMANDS  [100%] 1 of 1 ✔
-[55/bf9e1e] process > GENERATE_CRICK_COMMANDS [100%] 1 of 1 ✔
+Launching `main.nf` [nostalgic_jones] DSL2 - revision: 991518c430
+[b9/8ee6d9] process > LIST_FILES                [100%] 1 of 1, cached: 1 ✔
+[0e/9d57a9] process > GENERATE_VIDRL_COMMANDS   [100%] 1 of 1, cached: 1 ✔
+[9b/28999e] process > GENERATE_NIID_COMMANDS    [100%] 1 of 1, cached: 1 ✔
+[8f/2bc7db] process > GENERATE_CRICK_COMMANDS   [100%] 1 of 1, cached: 1 ✔
+[07/9b4a14] process > RUN_GENERATED_SCRIPTS (1) [100%] 1 of 1, cached: 1 ✔
+[99/4931ec] process > FETCH_FAUNA_COUNTS        [100%] 1 of 1, cached: 1 ✔
+[23/7c2c78] process > COMPARE_COUNTS (1)        [100%] 1 of 1, cached: 1 ✔
 File: results/files.txt, Lines: 896
-File: results/files_2024.txt, Lines: 100
-Run CRICK Script: results/scripts/files_2024_crick_script.sh
-Run NIID Script: results/scripts/files_2024_niid_script.sh
-Run VIDRL Script: results/scripts/files_2024_vidrl_script.sh
+File: results/files.txt, Lines: 896
+Run NIID Script: results/scripts/files_niid_script.sh
+Run VIDRL Script: results/scripts/files_vidrl_script.sh
+Run CRICK Script: results/scripts/files_crick_script.sh
+Comparing results: results/[results_vidrl.txt, flagged_vidrl.txt]
 ```
 
+<!--
 Run locally by linking required directories from the Fauna directory
 
 ```
@@ -88,17 +91,49 @@ done
 Compare
 
 ```
-echo "source|fauna_count" | tr '|' '\t' > vidrl_fauna.txt
-cat counts/*vidrl* | grep -v "source" >> vidrl_fauna.txt
-echo "source|auto_count" | tr '|' '\t' > vidrl_auto.txt
-grep "measurements after filtering" my_log/*.txt | grep vidrl |sed 's/my_log\///g' | awk '{print $1}'  |sed 's/.txt:/|/g'| tr '|' '\t'  >> vidrl_auto.txt
-tsv-join -H --filter-file vidrl_auto.txt --key-fields source --append-fields auto_count --write-all '?' vidrl_fauna.txt > results_vidrl.txt
+export source=vidrl
 
-# Pull out any discrepencies in the counts
-tsv-filter -H --ff-str-ne fauna_count:auto_count results_vidrl.txt
-#> source	fauna_count	auto_count
-#> vidrl_20231220H3N2	768	?
+echo "source|fauna_count" | tr '|' '\t' > ${source}_fauna.txt
+cat counts/*${source}* | grep -v "source" >> ${source}_fauna.txt
+
+echo "source|auto_count" | tr '|' '\t' > ${source}_auto.txt
+grep "measurements after filtering" my_log/*.txt \
+ | grep ${source} \
+ |sed 's/my_log\///g' \
+ | awk '{print $1}'  \
+ |sed 's/.txt:/|/g'\
+ | tr '|' '\t'  \
+ >> ${source}_auto.txt
+
+tsv-join -H --filter-file ${source}_auto.txt --key-fields source --append-fields auto_count --write-all '?' ${source}_fauna.txt > results_${source}.txt
+
 ```
+-->
+
+## Check results for vidrl
+
+```
+# Pull out any discrepencies in the counts
+tsv-filter -H --ff-str-ne fauna_count:auto_count results/results_vidrl.txt | grep -e "2024" -e "source"
+#> source	fauna_count	auto_count
+```
+
+Which means no discrepencies for 2024 data
+
+```
+# Pull out any discrepencies in the counts
+tsv-filter -H --ff-str-ne fauna_count:auto_count results/results_vidrl.txt | grep -e "2023" -e "source"
+#> source	fauna_count	auto_count
+#> vidrl_20230117H1N1	693	?
+#> vidrl_20230124H1N1	923	?
+#> vidrl_20230216H1N1	649	531
+#> vidrl_20230223H1N1	924	336
+#> ...
+```
+
+Need to check 2023 data...
+
+## Check results for niid
 
 ```
 echo "source|fauna_count" | tr '|' '\t' > niid_fauna.txt
