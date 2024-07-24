@@ -2,7 +2,9 @@
 
 nextflow.enable.dsl = 2
 
-
+params.filelist = false
+params.fauna_counts = false
+params.my_log = false
 
 process LIST_FILES {
   publishDir 'results', mode: 'copy'
@@ -60,7 +62,7 @@ process GENERATE_CRICK_COMMANDS {
 
 process RUN_GENERATED_SCRIPTS {
   publishDir 'results', mode: 'copy'
-  input: tuple path(vidrl_script), path(niid_script), path(crick_script)
+  input: path(source_script) //, path(niid_script), path(crick_script)
   output: tuple path("data/tmp/*"), path("my_log/*")
   script:
   """
@@ -72,11 +74,8 @@ process RUN_GENERATED_SCRIPTS {
   ln -s ~/nextstrain/fauna/source-data .
   mkdir -p data/tmp
   mkdir -p my_log
-  bash ${vidrl_script}
-  sleep 3
-  # bash ${niid_script}
-  # sleep 3
-  # bash ${crick_script}
+  bash ${source_script}
+  sleep 5
   """
 }
 
@@ -110,35 +109,52 @@ process COMPARE_COUNTS {
 }
 
 workflow {
-  xlsx_ch = LIST_FILES()
-  | view {file -> "File: results/${file.name}, Lines: ${file.text.split('\n').size()}"}
-  //| SELECT_2024
-  | view {file -> "File: results/${file.name}, Lines: ${file.text.split('\n').size()}"}
+  // List files
+  if (params.filelist) {
+    xlsx_ch = channel.fromPath(params.filelist)
+    | view {file -> "File: results/${file.name}, Lines: ${file.text.split('\n').size()}"}
+  } else {
+    xlsx_ch = LIST_FILES()
+    | view {file -> "File: results/${file.name}, Lines: ${file.text.split('\n').size()}"}
+    //| SELECT_2024
+    | view {file -> "File: results/${file.name}, Lines: ${file.text.split('\n').size()}"}
+  }
 
-  xlsx_ch
-  | GENERATE_VIDRL_COMMANDS
-  | view {file -> "Run VIDRL Script: results/scripts/${file.name}"}
+  // Fauna counts
+  if(params.fauna_counts) {
+    fauna_counts_ch = channel.fromPath(params.fauna_counts)
+    | collect
+    | map { it -> [it]}
+  } else {
+    fauna_counts_ch = FETCH_FAUNA_COUNTS
+    | map { it -> [it.get(0)]}
+  }
 
-  xlsx_ch
-  | GENERATE_NIID_COMMANDS
-  | view {file -> "Run NIID Script: results/scripts/${file.name}"}
+  if(params.my_log) {
+    my_log_ch = channel.fromPath(params.my_log)
+    | collect
+    | map { it -> [it]}
 
-  xlsx_ch
-  | GENERATE_CRICK_COMMANDS
-  | view {file -> "Run CRICK Script: results/scripts/${file.name}"}
+  } else {
+    // xlsx_ch
+    // | GENERATE_VIDRL_COMMANDS
+    // | view {file -> "Run VIDRL Script: results/scripts/${file.name}"}
 
-  GENERATE_VIDRL_COMMANDS.out
-  | combine(GENERATE_NIID_COMMANDS.out)
-  | combine(GENERATE_CRICK_COMMANDS.out)
-  | RUN_GENERATED_SCRIPTS
+    xlsx_ch
+    | GENERATE_NIID_COMMANDS
+    | view {file -> "Run NIID Script: results/scripts/${file.name}"}
 
-  FETCH_FAUNA_COUNTS()
+    // xlsx_ch
+    // | GENERATE_CRICK_COMMANDS
+    // | view {file -> "Run CRICK Script: results/scripts/${file.name}"}
 
-  my_log_ch = RUN_GENERATED_SCRIPTS.out | map { it -> [it.get(1)]}
+    my_log_ch = // GENERATE_VIDRL_COMMANDS.out
+    GENERATE_NIID_COMMANDS.out
+    | RUN_GENERATED_SCRIPTS
+    | map { it -> [it.get(1)]}
+  }
 
-  fauna_counts_ch = FETCH_FAUNA_COUNTS.out | map { it -> [it.get(0)]}
-
-  channel.of('vidrl')
+  channel.of('niid')
   | combine(my_log_ch)
   | combine(fauna_counts_ch)
   | COMPARE_COUNTS
