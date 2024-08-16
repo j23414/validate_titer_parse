@@ -159,3 +159,35 @@ For the second one, still investigating.
     cell_value = str(worksheet.cell_value(serum_abbrev_row_idx, col_idx))
 TypeError: list indices must be integers or slices, not NoneType
 ```
+
+
+## VIDRL human sera processing
+
+```bash
+nextflow run vidrl_sera_processing.nf
+
+#> N E X T F L O W  ~  version 23.04.4
+#> Launching `vidrl_sera_processing.nf` [hungry_visvesvaraya] DSL2 - revision: aefea81d38
+#> executor >  local (564)
+#> [b8/54570e] process > LIST_VIDRL_FILES      [100%] 1 of 1 ✔
+#> [7c/9b2cb1] process > RUN_TITER_BLOCK (562) [100%] 563 of 563 ✔
+#> Completed at: 16-Aug-2024 10:17:30
+#> Duration    : 1m 5s
+#> CPU hours   : 0.1
+#> Succeeded   : 564
+
+grep -h "HumanSerumData" results_sera/titer_block/* | head -n1 > human_sera_list.tsv
+grep -h "HumanSerumData" results_sera/titer_block/* | grep -v "filename"  >> human_sera_list.tsv
+
+head -n 10 human_sera_list.tsv
+#> HumanSerumData  col_idx serum_abbrev    serum_id        serum_passage   filename
+#> HumanSerumData  15      vaxpool         SH 2022 /Users/jchang3/nextstrain/fludata/VIDRL-Melbourne-WHO-CC/raw-data/A/H3N2/HI/2023/04192023H3N2.xlsx
+#> HumanSerumData  15      SHvax   Human   sera    /Users/jchang3/nextstrain/fludata/VIDRL-Melbourne-WHO-CC/raw-data/A/H3N2/HI/2020/20200311H3.xlsx
+#> HumanSerumData  20      SH2020  Human   sera    /Users/jchang3/nextstrain/fludata/VIDRL-Melbourne-WHO-CC/raw-data/A/H3N2/HI/2020/20200617H3.xlsx
+#> HumanSerumData  15      SH2020  Human   sera    /Users/jchang3/nextstrain/fludata/VIDRL-Melbourne-WHO-CC/raw-data/A/H3N2/HI/2020/20200714H3.xlsx
+#> HumanSerumData  14      SHvax2020               HUMAN   /Users/jchang3/nextstrain/fludata/VIDRL-Melbourne-WHO-CC/raw-data/A/H3N2/FRA/2020/20200804H3FRA.xlsx
+#> HumanSerumData  15      SH2020  Human   sera    /Users/jchang3/nextstrain/fludata/VIDRL-Melbourne-WHO-CC/raw-data/A/H3N2/HI/2020/20200911H3.xlsx
+#> HumanSerumData  15      SH2020  Human   sera    /Users/jchang3/nextstrain/fludata/VIDRL-Melbourne-WHO-CC/raw-data/A/H3N2/HI/2020/20201021H3.xlsx
+#> HumanSerumData  15      SH2020  Human   sera    /Users/jchang3/nextstrain/fludata/VIDRL-Melbourne-WHO-CC/raw-data/A/H3N2/HI/2020/20201209H3N2.xlsx
+#> HumanSerumData  15      SH2020  Human   sera    /Users/jchang3/nextstrain/fludata/VIDRL-Melbourne-WHO-CC/raw-data/A/H3N2/HI/2020/20201222H3N2.xlsx
+```
